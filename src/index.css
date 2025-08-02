@@ -130,9 +130,9 @@ body {
 
 .pointer {
   position: absolute;
-  top: 115px;
+  bottom: 115px; /* Перемещаем указатель вниз колеса (было top: 115px) */
   left: 50%;
-  transform: translateX(-50%);
+  transform: translateX(-50%) rotate(180deg); /* Поворачиваем указатель на 180° чтобы он указывал вверх */
   width: 35px;  /* Соответствует ширине нового SVG (28.6026 + padding) */
   height: 35px; /* Соответствует высоте нового SVG */
   background: #c0c0c0;

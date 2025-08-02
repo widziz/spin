@@ -8,9 +8,13 @@ export const initSpinGenerator = (config) => {
 };
 
 export const startSpinAdvanced = ({
+  currentRotation = 0,
   slots = 12,
   prizes = [],
   generator = null,
+  generateOptions = {},
+  onGenerate,
+  onUpdate,
   onComplete
 }) => {
   const resultGenerator = generator || spinGenerator;
@@ -18,9 +22,15 @@ export const startSpinAdvanced = ({
     throw new Error('Spin generator not initialized. Call initSpinGenerator() first.');
   }
 
-  const spinResult = resultGenerator.generate();
+  const spinResult = resultGenerator.generate(generateOptions);
+  
+  // Вызываем callback после генерации результата
+  if (onGenerate) {
+    onGenerate(spinResult);
+  }
+
   let animationId = null;
-  let currentAngle = 0;
+  let currentAngle = currentRotation;
   let velocity = 0;
   let startTime = null;
   let lastTimestamp = null;
@@ -59,11 +69,12 @@ export const startSpinAdvanced = ({
       targetVelocity = animationConfig.maxVelocity * (1 - easeOutQuart(decelerationProgress));
       
       if (targetVelocity < 2) {
-        const remainingAngle = spinResult.totalRotation - currentAngle;
+        const targetRotation = currentRotation + spinResult.totalRotation;
+        const remainingAngle = targetRotation - currentAngle;
         if (remainingAngle > 1) {
           targetVelocity = Math.max(0.1, remainingAngle * animationConfig.finalAdjustmentSpeed);
         } else {
-          currentAngle = spinResult.totalRotation;
+          currentAngle = targetRotation;
           finishSpin();
           return;
         }
@@ -73,22 +84,29 @@ export const startSpinAdvanced = ({
     const velocityDiff = targetVelocity - velocity;
     velocity += velocityDiff * 0.1;
     currentAngle += velocity * (deltaTime / 16.67);
+    
+    // Обновляем UI
+    if (onUpdate) {
+      onUpdate(currentAngle);
+    }
+    
     animationId = requestAnimationFrame(animate);
   };
 
   const finishSpin = () => {
     cancelAnimationFrame(animationId);
     const normalizedAngle = ((currentAngle % 360) + 360) % 360;
-    const winningIndex = calculateWinningSlot(normalizedAngle, slots);
+    const winningIndex = calculateWinningSlot(normalizedAngle, resultGenerator);
 
     console.log('Spin result:', {
       'Expected slot': spinResult.targetSlot,
       'Actual slot': winningIndex,
-      'Final angle': normalizedAngle.toFixed(2)
+      'Final angle': normalizedAngle.toFixed(2),
+      'Total rotation': spinResult.totalRotation.toFixed(2)
     });
 
     if (onComplete) {
-      onComplete(winningIndex, spinResult.prize);
+      onComplete(currentAngle, winningIndex, spinResult.prize);
     }
   };
 
@@ -102,13 +120,19 @@ export const startSpinAdvanced = ({
   };
 };
 
-export function calculateWinningSlot(angle, totalSlots) {
-  const slotAngle = 360 / totalSlots;
-  const pointerPosition = 270;
-  const initialSlot = 10;
-  const slotOffset = initialSlot * slotAngle;
-  const rawPosition = (angle + pointerPosition + slotOffset) % 360;
-  return Math.floor(rawPosition / slotAngle) % totalSlots;
+export function calculateWinningSlot(angle, generator) {
+  const slotAngle = generator.slotAngle;
+  const pointerPosition = generator.pointerPosition;
+  
+  // Нормализуем угол
+  const normalizedAngle = ((angle % 360) + 360) % 360;
+  
+  // Рассчитываем какой слот находится под указателем
+  // Указатель находится на pointerPosition градусах, найдем слот под ним
+  const angleUnderPointer = (normalizedAngle + pointerPosition) % 360;
+  const slotIndex = Math.floor(angleUnderPointer / slotAngle) % generator.slots;
+  
+  return slotIndex;
 }
 
 export const startSpinSimple = (options) => {
