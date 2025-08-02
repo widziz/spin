@@ -13,6 +13,8 @@ export class SpinResultGenerator {
     this.initialSlot = config.initialSlot || 0;
     this.slotAngle = 360 / this.slots;
     this.slotOffset = this.initialSlot * this.slotAngle;
+    // Учитываем смещение визуального представления (слот 0 внизу = -90°)
+    this.visualOffset = -90;
   }
 
   generate(options = {}) {
@@ -20,21 +22,31 @@ export class SpinResultGenerator {
     const rotations = Random.between(5, 8);
     
     // Рассчитываем целевой угол так, чтобы указатель указывал на нужный слот
-    // Угол слота относительно центра (0 градусов = верх)
-    const slotCenterAngle = targetSlot * this.slotAngle;
+    // Слот 0 находится внизу (-90°), слоты идут по часовой стрелке
+    const slotCenterAngle = targetSlot * this.slotAngle + this.visualOffset;
     
-    // Чтобы указатель (270°) указывал на слот, колесо должно повернуться на:
-    // (270° - slotCenterAngle) для совмещения указателя с центром слота
-    let targetAngle = (this.pointerPosition - slotCenterAngle) % 360;
-    if (targetAngle < 0) targetAngle += 360;
+    // Поскольку и указатель (270°) и слот 0 (-90° = 270°) находятся внизу,
+    // для попадания в слот 0 колесо не должно поворачиваться (targetAngle = 0)
+    // Для других слотов нужен поворот
+    let targetAngle = (this.pointerPosition - slotCenterAngle + 360) % 360;
     
     const totalRotation = rotations * 360 + targetAngle;
+
+    console.log('🎲 Генерируем результат:', {
+      targetSlot,
+      totalRotation,
+      targetAngle,
+      slotCenterAngle,
+      slotPositionDegrees: slotCenterAngle,
+      currentRotation: 0
+    });
 
     return {
       targetSlot,
       rotations,
       totalRotation,
       targetAngle,
+      slotCenterAngle,
       prize: this.prizes[targetSlot % this.prizes.length],
       slotAngle: this.slotAngle,
       id: `spin_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`

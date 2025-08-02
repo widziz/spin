@@ -36,11 +36,12 @@ export const startSpinAdvanced = ({
   let lastTimestamp = null;
 
   const animationConfig = {
-    accelerationTime: 1000,
-    maxSpeedTime: 2000,
-    decelerationTime: 3000 + Math.random() * 2000,
-    maxVelocity: 30 + Math.random() * 15,
-    finalAdjustmentSpeed: 0.15
+    accelerationTime: 800,
+    maxSpeedTime: 1500,
+    decelerationTime: 2500 + Math.random() * 1500,
+    maxVelocity: 25 + Math.random() * 10,
+    finalAdjustmentSpeed: 0.08,
+    precisionThreshold: 0.5
   };
 
   const easeInCubic = (t) => t * t * t;
@@ -55,6 +56,7 @@ export const startSpinAdvanced = ({
     lastTimestamp = timestamp;
 
     let targetVelocity = 0;
+    const targetRotation = currentRotation + spinResult.totalRotation;
 
     if (elapsed < animationConfig.accelerationTime) {
       const progress = elapsed / animationConfig.accelerationTime;
@@ -68,12 +70,15 @@ export const startSpinAdvanced = ({
       const decelerationProgress = Math.min(decelerationElapsed / animationConfig.decelerationTime, 1);
       targetVelocity = animationConfig.maxVelocity * (1 - easeOutQuart(decelerationProgress));
       
-      if (targetVelocity < 2) {
-        const targetRotation = currentRotation + spinResult.totalRotation;
+      // Финальная точная подстройка к целевому углу
+      if (targetVelocity < 3) {
         const remainingAngle = targetRotation - currentAngle;
-        if (remainingAngle > 1) {
-          targetVelocity = Math.max(0.1, remainingAngle * animationConfig.finalAdjustmentSpeed);
+        if (Math.abs(remainingAngle) > animationConfig.precisionThreshold) {
+          targetVelocity = Math.max(0.1, Math.abs(remainingAngle) * animationConfig.finalAdjustmentSpeed);
+          // Учитываем направление доворота
+          if (remainingAngle < 0) targetVelocity = -targetVelocity;
         } else {
+          // Достигли целевого угла с нужной точностью
           currentAngle = targetRotation;
           finishSpin();
           return;
@@ -82,7 +87,7 @@ export const startSpinAdvanced = ({
     }
 
     const velocityDiff = targetVelocity - velocity;
-    velocity += velocityDiff * 0.1;
+    velocity += velocityDiff * 0.08; // Более плавное изменение скорости
     currentAngle += velocity * (deltaTime / 16.67);
     
     // Обновляем UI
@@ -98,11 +103,26 @@ export const startSpinAdvanced = ({
     const normalizedAngle = ((currentAngle % 360) + 360) % 360;
     const winningIndex = calculateWinningSlot(normalizedAngle, resultGenerator);
 
-    console.log('Spin result:', {
-      'Expected slot': spinResult.targetSlot,
-      'Actual slot': winningIndex,
-      'Final angle': normalizedAngle.toFixed(2),
-      'Total rotation': spinResult.totalRotation.toFixed(2)
+    console.log('🎯 Результат спина:', {
+      'Ожидаемый слот': spinResult.targetSlot,
+      'Фактический слот': winningIndex,
+      'Финальный угол': normalizedAngle.toFixed(2),
+      'Общий поворот': spinResult.totalRotation.toFixed(2),
+      'Текущий угол': currentAngle.toFixed(2),
+      'Разница углов': (normalizedAngle - spinResult.targetAngle).toFixed(2),
+      'Ожидаемый targetAngle': spinResult.targetAngle.toFixed(2),
+      'Совпадение': spinResult.targetSlot === winningIndex ? '✅' : '❌'
+    });
+
+    // Дополнительная отладка для понимания позиций слотов
+    const slotAngle = resultGenerator.slotAngle;
+    const visualOffset = resultGenerator.visualOffset || -90;
+    console.log('📍 Позиции слотов:', {
+      'Слот 0': `${visualOffset}° (${(visualOffset + 360) % 360}°)`,
+      'Слот 1': `${(visualOffset + slotAngle) % 360}°`,
+      'Слот 2': `${(visualOffset + 2 * slotAngle) % 360}°`,
+      'Слот 18': `${(visualOffset + 18 * slotAngle) % 360}°`,
+      'Указатель': `${resultGenerator.pointerPosition}°`
     });
 
     if (onComplete) {
@@ -123,14 +143,38 @@ export const startSpinAdvanced = ({
 export function calculateWinningSlot(angle, generator) {
   const slotAngle = generator.slotAngle;
   const pointerPosition = generator.pointerPosition;
+  const slots = generator.slots;
+  const visualOffset = generator.visualOffset || -90; // Слот 0 внизу = -90°
   
-  // Нормализуем угол
+  // Нормализуем текущий угол колеса (0-360)
   const normalizedAngle = ((angle % 360) + 360) % 360;
   
-  // Рассчитываем какой слот находится под указателем
-  // Указатель находится на pointerPosition градусах, найдем слот под ним
-  const angleUnderPointer = (normalizedAngle + pointerPosition) % 360;
-  const slotIndex = Math.floor(angleUnderPointer / slotAngle) % generator.slots;
+  // Пробуем инвертировать направление - если CSS вращает по часовой,
+  // а наша логика против часовой, то нужно инвертировать
+  
+  // Угол слота под указателем после поворота колеса на normalizedAngle
+  // Инвертируем направление: вместо (pointerPosition - normalizedAngle)
+  // используем (pointerPosition + normalizedAngle)
+  let slotAngleUnderPointer = (pointerPosition + normalizedAngle) % 360;
+  
+  // Корректируем для учета того, что слот 0 находится в позиции -90° (270°)
+  // Переводим угол в систему координат слотов
+  const adjustedAngle = (slotAngleUnderPointer - visualOffset + 360) % 360;
+  
+  // Рассчитываем индекс слота
+  const slotIndex = Math.floor(adjustedAngle / slotAngle) % slots;
+  
+  // Отладочная информация
+  console.log('🧮 Расчет слота (инвертированное направление):', {
+    normalizedAngle: normalizedAngle.toFixed(2),
+    slotAngleUnderPointer: slotAngleUnderPointer.toFixed(2),
+    adjustedAngle: adjustedAngle.toFixed(2),
+    slotAngle: slotAngle.toFixed(2),
+    calculatedSlot: slotIndex,
+    pointerPosition: pointerPosition,
+    visualOffset: visualOffset,
+    totalSlots: slots
+  });
   
   return slotIndex;
 }
