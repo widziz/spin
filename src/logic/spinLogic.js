@@ -35,12 +35,16 @@ export const startSpinAdvanced = ({
   let startTime = null;
   let lastTimestamp = null;
 
+  // Цель анимации - достичь этого угла
+  const targetFinalAngle = currentRotation + spinResult.totalRotation;
+
   const animationConfig = {
-    accelerationTime: 1000,
-    maxSpeedTime: 2000,
-    decelerationTime: 3000 + Math.random() * 2000,
-    maxVelocity: 30 + Math.random() * 15,
-    finalAdjustmentSpeed: 0.15
+    accelerationTime: 1500,      // Увеличиваем время разгона
+    maxSpeedTime: 2000,          // Время на максимальной скорости
+    decelerationTime: 4000,      // Увеличиваем время торможения
+    maxVelocity: 25 + Math.random() * 10, // Максимальная скорость
+    finalAdjustmentSpeed: 0.05,  // Скорость финальной подгонки
+    minAnimationTime: 6000       // Минимальное время анимации
   };
 
   const easeInCubic = (t) => t * t * t;
@@ -56,25 +60,32 @@ export const startSpinAdvanced = ({
 
     let targetVelocity = 0;
 
+    // Проверяем минимальное время анимации
+    const minTimeElapsed = elapsed >= animationConfig.minAnimationTime;
+    const remainingDistance = Math.abs(targetFinalAngle - currentAngle);
+
     if (elapsed < animationConfig.accelerationTime) {
+      // Фаза разгона
       const progress = elapsed / animationConfig.accelerationTime;
       targetVelocity = animationConfig.maxVelocity * easeInCubic(progress);
     } 
     else if (elapsed < animationConfig.accelerationTime + animationConfig.maxSpeedTime) {
+      // Фаза максимальной скорости
       targetVelocity = animationConfig.maxVelocity;
     } 
     else {
+      // Фаза торможения
       const decelerationElapsed = elapsed - animationConfig.accelerationTime - animationConfig.maxSpeedTime;
       const decelerationProgress = Math.min(decelerationElapsed / animationConfig.decelerationTime, 1);
       targetVelocity = animationConfig.maxVelocity * (1 - easeOutQuart(decelerationProgress));
       
-      if (targetVelocity < 2) {
-        const targetRotation = currentRotation + spinResult.totalRotation;
-        const remainingAngle = targetRotation - currentAngle;
-        if (remainingAngle > 1) {
-          targetVelocity = Math.max(0.1, remainingAngle * animationConfig.finalAdjustmentSpeed);
+      // Финальная подгонка только если прошло минимальное время
+      if (targetVelocity < 2 && minTimeElapsed) {
+        if (remainingDistance > 2) {
+          targetVelocity = Math.max(0.1, remainingDistance * animationConfig.finalAdjustmentSpeed);
         } else {
-          currentAngle = targetRotation;
+          // Анимация завершена
+          currentAngle = targetFinalAngle;
           finishSpin();
           return;
         }
@@ -82,7 +93,7 @@ export const startSpinAdvanced = ({
     }
 
     const velocityDiff = targetVelocity - velocity;
-    velocity += velocityDiff * 0.1;
+    velocity += velocityDiff * 0.08; // Немного замедляем изменение скорости
     currentAngle += velocity * (deltaTime / 16.67);
     
     // Обновляем UI
@@ -94,15 +105,20 @@ export const startSpinAdvanced = ({
   };
 
   const finishSpin = () => {
-    cancelAnimationFrame(animationId);
+    if (animationId) {
+      cancelAnimationFrame(animationId);
+      animationId = null;
+    }
+    
     const normalizedAngle = ((currentAngle % 360) + 360) % 360;
     const winningIndex = calculateWinningSlot(normalizedAngle, resultGenerator);
 
-    console.log('Spin result:', {
-      'Expected slot': spinResult.targetSlot,
-      'Actual slot': winningIndex,
-      'Final angle': normalizedAngle.toFixed(2),
-      'Total rotation': spinResult.totalRotation.toFixed(2)
+    console.log('🎯 Результат спина:', {
+      'Ожидаемый слот': spinResult.targetSlot,
+      'Фактический слот': winningIndex,
+      'Финальный угол': normalizedAngle.toFixed(2),
+      'Общий поворот': spinResult.totalRotation.toFixed(2),
+      'Текущий угол': currentAngle.toFixed(2)
     });
 
     if (onComplete) {
@@ -114,7 +130,10 @@ export const startSpinAdvanced = ({
 
   return {
     cancel: () => {
-      if (animationId) cancelAnimationFrame(animationId);
+      if (animationId) {
+        cancelAnimationFrame(animationId);
+        animationId = null;
+      }
     },
     result: spinResult
   };

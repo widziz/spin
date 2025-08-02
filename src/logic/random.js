@@ -13,6 +13,13 @@ export class SpinResultGenerator {
     this.initialSlot = config.initialSlot || 0;
     this.slotAngle = 360 / this.slots;
     this.slotOffset = this.initialSlot * this.slotAngle;
+    
+    // Статистика для отслеживания
+    this.statistics = {
+      totalSpins: 0,
+      slotHits: new Array(this.slots).fill(0),
+      prizeHits: new Map()
+    };
   }
 
   generate(options = {}) {
@@ -20,25 +27,50 @@ export class SpinResultGenerator {
     const rotations = Random.between(5, 8);
     
     // Рассчитываем целевой угол так, чтобы указатель указывал на нужный слот
-    // Угол слота относительно центра (0 градусов = верх)
+    // Угол слота относительно центра (0 градусов = верх, увеличивается по часовой стрелке)
     const slotCenterAngle = targetSlot * this.slotAngle;
     
-    // Чтобы указатель (270°) указывал на слот, колесо должно повернуться на:
-    // (270° - slotCenterAngle) для совмещения указателя с центром слота
+    // Чтобы указатель (270°) указывал на слот, колесо должно повернуться так,
+    // чтобы слот оказался на позиции указателя
+    // Формула: угол_поворота = (позиция_указателя - угол_слота) % 360
     let targetAngle = (this.pointerPosition - slotCenterAngle) % 360;
     if (targetAngle < 0) targetAngle += 360;
     
     const totalRotation = rotations * 360 + targetAngle;
+
+    // Обновляем статистику
+    this.statistics.totalSpins++;
+    this.statistics.slotHits[targetSlot]++;
+    const prize = this.prizes[targetSlot % this.prizes.length];
+    if (prize) {
+      const prizeKey = `${prize.image}_${prize.value}`;
+      this.statistics.prizeHits.set(prizeKey, (this.statistics.prizeHits.get(prizeKey) || 0) + 1);
+    }
 
     return {
       targetSlot,
       rotations,
       totalRotation,
       targetAngle,
-      prize: this.prizes[targetSlot % this.prizes.length],
+      prize,
       slotAngle: this.slotAngle,
       id: `spin_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`
     };
+  }
+
+  getStatistics() {
+    return {
+      totalSpins: this.statistics.totalSpins,
+      slotHits: [...this.statistics.slotHits],
+      prizeHits: Object.fromEntries(this.statistics.prizeHits),
+      averageSlot: this.statistics.slotHits.reduce((sum, hits, index) => sum + hits * index, 0) / this.statistics.totalSpins || 0
+    };
+  }
+
+  resetStatistics() {
+    this.statistics.totalSpins = 0;
+    this.statistics.slotHits.fill(0);
+    this.statistics.prizeHits.clear();
   }
 }
 
