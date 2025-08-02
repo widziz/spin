@@ -23,18 +23,14 @@ export const Wheel = () => {
     spinGeneratorRef.current = createSpinGenerator({
       slots: wheelConfig.slots,
       prizes: wheelConfig.prizes,
-      pointerPosition: 270, // Указатель внизу колеса
-      initialSlot: 0, // Начальная позиция
-      weights: wheelConfig.prizeWeights || null, // Опциональные веса призов
-      fairMode: wheelConfig.fairMode !== false // По умолчанию честный режим
+      pointerPosition: 270 // Указатель внизу колеса
     });
     
     // Также инициализируем глобальный генератор
     initSpinGenerator({
       slots: wheelConfig.slots,
       prizes: wheelConfig.prizes,
-      pointerPosition: 270,
-      initialSlot: 0
+      pointerPosition: 270
     });
   }, []);
 
@@ -74,16 +70,13 @@ export const Wheel = () => {
         setRotation(newRotation);
       },
       onComplete: (finalRotation, winningIndex, prize) => {
-        console.log('🎯 Выпал слот:', winningIndex);
-        console.log('🏆 Приз:', prize);
-        console.log('📊 Статистика:', spinGeneratorRef.current.getStatistics());
+        console.log('🏆 Выигрышный приз:', `${prize?.value || 'Неизвестно'}`);
         
         setIsSpinning(false);
         setRotation(finalRotation);
         
         // Можно добавить дополнительные действия после выигрыша
-        if (prize.value >= 500) {
-          // Большой выигрыш!
+        if (prize && prize.value && parseInt(prize.value) >= 100) {
           console.log('🎉 БОЛЬШОЙ ВЫИГРЫШ!');
         }
       }
