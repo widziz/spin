@@ -12,7 +12,6 @@ export class SpinResultGenerator {
     // Начальный слот (где указатель указывает при угле 0)
     this.initialSlot = config.initialSlot || 0;
     this.slotAngle = 360 / this.slots;
-    this.slotOffset = this.initialSlot * this.slotAngle;
     
     // Статистика для отслеживания
     this.statistics = {
@@ -26,14 +25,18 @@ export class SpinResultGenerator {
     const targetSlot = options.guaranteed !== undefined ? options.guaranteed : Random.int(0, this.slots - 1);
     const rotations = Random.between(5, 8);
     
-    // Рассчитываем целевой угол так, чтобы указатель указывал на нужный слот
-    // Угол слота относительно центра (0 градусов = верх, увеличивается по часовой стрелке)
-    const slotCenterAngle = targetSlot * this.slotAngle;
+    // Рассчитываем целевой угол
+    // В createWheel.js слот 0 начинается с угла -90° (270°)
+    // Центр каждого слота: слот_i находится на угле (-90° + i * slotAngle)
+    const slotCenterAngle = -90 + (targetSlot * this.slotAngle);
     
-    // Чтобы указатель (270°) указывал на слот, колесо должно повернуться так,
+    // Нормализуем угол слота к диапазону 0-360
+    const normalizedSlotAngle = ((slotCenterAngle % 360) + 360) % 360;
+    
+    // Чтобы указатель (270°) указывал на центр слота, нужно повернуть колесо так,
     // чтобы слот оказался на позиции указателя
-    // Формула: угол_поворота = (позиция_указателя - угол_слота) % 360
-    let targetAngle = (this.pointerPosition - slotCenterAngle) % 360;
+    // targetAngle = slotAngle - pointerPosition (но нужно учесть направление вращения)
+    let targetAngle = (normalizedSlotAngle - this.pointerPosition) % 360;
     if (targetAngle < 0) targetAngle += 360;
     
     const totalRotation = rotations * 360 + targetAngle;
@@ -52,6 +55,7 @@ export class SpinResultGenerator {
       rotations,
       totalRotation,
       targetAngle,
+      slotCenterAngle: normalizedSlotAngle,
       prize,
       slotAngle: this.slotAngle,
       id: `spin_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`

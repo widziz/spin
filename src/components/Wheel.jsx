@@ -56,7 +56,7 @@ export const Wheel = () => {
       generateOptions: {
         antiRepeat: true,      // Защита от повторений
         maxRepeats: 3,        // Не более 3 одинаковых призов подряд
-        // guaranteed: 5,      // Для тестирования конкретного слота
+        guaranteed: 0,        // Для тестирования - всегда выпадает слот 0
       },
       onGenerate: (result) => {
         // Callback после генерации результата (до начала анимации)
@@ -76,13 +76,17 @@ export const Wheel = () => {
       onComplete: (finalRotation, winningIndex, prize) => {
         console.log('🎯 Выпал слот:', winningIndex);
         console.log('🏆 Приз:', prize);
-        console.log('📊 Статистика:', spinGeneratorRef.current.getStatistics());
+        
+        // Проверяем наличие метода getStatistics
+        if (spinGeneratorRef.current && typeof spinGeneratorRef.current.getStatistics === 'function') {
+          console.log('📊 Статистика:', spinGeneratorRef.current.getStatistics());
+        }
         
         setIsSpinning(false);
         setRotation(finalRotation);
         
         // Можно добавить дополнительные действия после выигрыша
-        if (prize.value >= 500) {
+        if (prize && prize.value >= 500) {
           // Большой выигрыш!
           console.log('🎉 БОЛЬШОЙ ВЫИГРЫШ!');
         }

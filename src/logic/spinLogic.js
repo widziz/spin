@@ -24,6 +24,14 @@ export const startSpinAdvanced = ({
 
   const spinResult = resultGenerator.generate(generateOptions);
   
+  console.log('🎲 Генерируем результат:', {
+    targetSlot: spinResult.targetSlot,
+    totalRotation: spinResult.totalRotation,
+    targetAngle: spinResult.targetAngle,
+    slotCenterAngle: spinResult.slotCenterAngle,
+    currentRotation
+  });
+  
   // Вызываем callback после генерации результата
   if (onGenerate) {
     onGenerate(spinResult);
@@ -39,16 +47,16 @@ export const startSpinAdvanced = ({
   const targetFinalAngle = currentRotation + spinResult.totalRotation;
 
   const animationConfig = {
-    accelerationTime: 1500,      // Увеличиваем время разгона
-    maxSpeedTime: 2000,          // Время на максимальной скорости
-    decelerationTime: 4000,      // Увеличиваем время торможения
-    maxVelocity: 25 + Math.random() * 10, // Максимальная скорость
-    finalAdjustmentSpeed: 0.05,  // Скорость финальной подгонки
-    minAnimationTime: 6000       // Минимальное время анимации
+    totalDuration: 8000,        // Общая длительность анимации
+    accelerationTime: 2000,     // Время разгона
+    maxSpeedTime: 3000,         // Время на максимальной скорости
+    decelerationTime: 3000,     // Время торможения
+    maxVelocity: 20,            // Максимальная скорость (градусы в секунду)
   };
 
-  const easeInCubic = (t) => t * t * t;
-  const easeOutQuart = (t) => 1 - Math.pow(1 - t, 4);
+  const easeInOut = (t) => {
+    return t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+  };
 
   const animate = (timestamp) => {
     if (!startTime) startTime = timestamp;
@@ -58,47 +66,24 @@ export const startSpinAdvanced = ({
     const deltaTime = timestamp - lastTimestamp;
     lastTimestamp = timestamp;
 
-    let targetVelocity = 0;
-
-    // Проверяем минимальное время анимации
-    const minTimeElapsed = elapsed >= animationConfig.minAnimationTime;
-    const remainingDistance = Math.abs(targetFinalAngle - currentAngle);
-
-    if (elapsed < animationConfig.accelerationTime) {
-      // Фаза разгона
-      const progress = elapsed / animationConfig.accelerationTime;
-      targetVelocity = animationConfig.maxVelocity * easeInCubic(progress);
-    } 
-    else if (elapsed < animationConfig.accelerationTime + animationConfig.maxSpeedTime) {
-      // Фаза максимальной скорости
-      targetVelocity = animationConfig.maxVelocity;
-    } 
-    else {
-      // Фаза торможения
-      const decelerationElapsed = elapsed - animationConfig.accelerationTime - animationConfig.maxSpeedTime;
-      const decelerationProgress = Math.min(decelerationElapsed / animationConfig.decelerationTime, 1);
-      targetVelocity = animationConfig.maxVelocity * (1 - easeOutQuart(decelerationProgress));
-      
-      // Финальная подгонка только если прошло минимальное время
-      if (targetVelocity < 2 && minTimeElapsed) {
-        if (remainingDistance > 2) {
-          targetVelocity = Math.max(0.1, remainingDistance * animationConfig.finalAdjustmentSpeed);
-        } else {
-          // Анимация завершена
-          currentAngle = targetFinalAngle;
-          finishSpin();
-          return;
-        }
-      }
-    }
-
-    const velocityDiff = targetVelocity - velocity;
-    velocity += velocityDiff * 0.08; // Немного замедляем изменение скорости
-    currentAngle += velocity * (deltaTime / 16.67);
+    // Простая логика: используем easing функцию для всей анимации
+    const progress = Math.min(elapsed / animationConfig.totalDuration, 1);
+    const easedProgress = easeInOut(progress);
+    
+    // Рассчитываем текущий угол на основе прогресса
+    const newAngle = currentRotation + (spinResult.totalRotation * easedProgress);
+    currentAngle = newAngle;
     
     // Обновляем UI
     if (onUpdate) {
       onUpdate(currentAngle);
+    }
+    
+    // Проверяем завершение анимации
+    if (progress >= 1) {
+      currentAngle = targetFinalAngle;
+      finishSpin();
+      return;
     }
     
     animationId = requestAnimationFrame(animate);
@@ -118,7 +103,8 @@ export const startSpinAdvanced = ({
       'Фактический слот': winningIndex,
       'Финальный угол': normalizedAngle.toFixed(2),
       'Общий поворот': spinResult.totalRotation.toFixed(2),
-      'Текущий угол': currentAngle.toFixed(2)
+      'Текущий угол': currentAngle.toFixed(2),
+      'Целевой угол': targetFinalAngle.toFixed(2)
     });
 
     if (onComplete) {
@@ -141,15 +127,27 @@ export const startSpinAdvanced = ({
 
 export function calculateWinningSlot(angle, generator) {
   const slotAngle = generator.slotAngle;
-  const pointerPosition = generator.pointerPosition;
   
   // Нормализуем угол
   const normalizedAngle = ((angle % 360) + 360) % 360;
   
-  // Рассчитываем какой слот находится под указателем
-  // Указатель находится на pointerPosition градусах, найдем слот под ним
-  const angleUnderPointer = (normalizedAngle + pointerPosition) % 360;
-  const slotIndex = Math.floor(angleUnderPointer / slotAngle) % generator.slots;
+  // В createWheel.js слот 0 начинается с угла -90° (что равно 270°)
+  // Центр слота i находится на угле: 270° + i * slotAngle
+  // Указатель находится на 270°
+  
+  // Находим какой слот находится под указателем
+  // Добавляем 90° чтобы привести к стандартной системе (где 0° = верх)
+  const adjustedAngle = (normalizedAngle + 90) % 360;
+  const slotIndex = Math.floor(adjustedAngle / slotAngle) % generator.slots;
+  
+  console.log('🧮 Расчет слота:', {
+    originalAngle: angle,
+    normalizedAngle: normalizedAngle.toFixed(2),
+    adjustedAngle: adjustedAngle.toFixed(2),
+    slotAngle: slotAngle.toFixed(2),
+    calculatedSlot: slotIndex,
+    totalSlots: generator.slots
+  });
   
   return slotIndex;
 }
