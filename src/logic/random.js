@@ -7,26 +7,24 @@ export class SpinResultGenerator {
   constructor(config) {
     this.slots = config.slots || 12;
     this.prizes = config.prizes || [];
-    // Указатель находится внизу колеса (270 градусов)
+    // Указатель находится внизу колеса (270 градусов от верха по часовой стрелке)
     this.pointerPosition = config.pointerPosition || 270;
-    // Начальный слот (где указатель указывает при угле 0)
-    this.initialSlot = config.initialSlot || 0;
     this.slotAngle = 360 / this.slots;
-    this.slotOffset = this.initialSlot * this.slotAngle;
   }
 
   generate(options = {}) {
     const targetSlot = options.guaranteed !== undefined ? options.guaranteed : Random.int(0, this.slots - 1);
     const rotations = Random.between(5, 8);
     
-    // Рассчитываем целевой угол так, чтобы указатель указывал на нужный слот
-    // Угол слота относительно центра (0 градусов = верх)
-    const slotCenterAngle = targetSlot * this.slotAngle;
+    // В createWheel.js слоты создаются с углом: i * angleStep - Math.PI/2
+    // Это означает что слот 0 находится внизу (270°), слот slots/4 справа (0°) и т.д.
+    // Центр слота i находится на угле: (targetSlot * slotAngle - 90) градусов
+    const slotCenterAngle = (targetSlot * this.slotAngle - 90 + 360) % 360;
     
-    // Чтобы указатель (270°) указывал на слот, колесо должно повернуться на:
-    // (270° - slotCenterAngle) для совмещения указателя с центром слота
-    let targetAngle = (this.pointerPosition - slotCenterAngle) % 360;
-    if (targetAngle < 0) targetAngle += 360;
+    // Указатель находится на 270° (внизу)
+    // Чтобы указатель указывал на слот, нужно повернуть колесо так, 
+    // чтобы slotCenterAngle оказался на позиции указателя (270°)
+    let targetAngle = (270 - slotCenterAngle + 360) % 360;
     
     const totalRotation = rotations * 360 + targetAngle;
 

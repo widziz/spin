@@ -36,15 +36,16 @@ export const startSpinAdvanced = ({
   let lastTimestamp = null;
 
   const animationConfig = {
-    accelerationTime: 1000,
-    maxSpeedTime: 2000,
-    decelerationTime: 3000 + Math.random() * 2000,
-    maxVelocity: 30 + Math.random() * 15,
-    finalAdjustmentSpeed: 0.15
+    accelerationTime: 800,
+    maxSpeedTime: 1500,
+    decelerationTime: 2500 + Math.random() * 1500,
+    maxVelocity: 25 + Math.random() * 10,
+    finalAdjustmentSpeed: 0.08
   };
 
   const easeInCubic = (t) => t * t * t;
-  const easeOutQuart = (t) => 1 - Math.pow(1 - t, 4);
+  const easeOutQuint = (t) => 1 - Math.pow(1 - t, 5);
+  const easeInOutCubic = (t) => t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
 
   const animate = (timestamp) => {
     if (!startTime) startTime = timestamp;
@@ -66,13 +67,13 @@ export const startSpinAdvanced = ({
     else {
       const decelerationElapsed = elapsed - animationConfig.accelerationTime - animationConfig.maxSpeedTime;
       const decelerationProgress = Math.min(decelerationElapsed / animationConfig.decelerationTime, 1);
-      targetVelocity = animationConfig.maxVelocity * (1 - easeOutQuart(decelerationProgress));
+      targetVelocity = animationConfig.maxVelocity * (1 - easeOutQuint(decelerationProgress));
       
-      if (targetVelocity < 2) {
+      if (targetVelocity < 1.5) {
         const targetRotation = currentRotation + spinResult.totalRotation;
         const remainingAngle = targetRotation - currentAngle;
-        if (remainingAngle > 1) {
-          targetVelocity = Math.max(0.1, remainingAngle * animationConfig.finalAdjustmentSpeed);
+        if (remainingAngle > 0.5) {
+          targetVelocity = Math.max(0.05, remainingAngle * animationConfig.finalAdjustmentSpeed);
         } else {
           currentAngle = targetRotation;
           finishSpin();
@@ -82,7 +83,8 @@ export const startSpinAdvanced = ({
     }
 
     const velocityDiff = targetVelocity - velocity;
-    velocity += velocityDiff * 0.1;
+    const interpolationFactor = Math.min(deltaTime / 16.67 * 0.15, 0.8);
+    velocity += velocityDiff * interpolationFactor;
     currentAngle += velocity * (deltaTime / 16.67);
     
     // Обновляем UI
@@ -98,11 +100,17 @@ export const startSpinAdvanced = ({
     const normalizedAngle = ((currentAngle % 360) + 360) % 360;
     const winningIndex = calculateWinningSlot(normalizedAngle, resultGenerator);
 
-    console.log('Spin result:', {
-      'Expected slot': spinResult.targetSlot,
-      'Actual slot': winningIndex,
-      'Final angle': normalizedAngle.toFixed(2),
-      'Total rotation': spinResult.totalRotation.toFixed(2)
+    const absoluteAngleUnderPointer = (270 + normalizedAngle) % 360;
+    const adjustedAngle = (absoluteAngleUnderPointer + 90) % 360;
+    
+    console.log('🎯 Результат вращения:', {
+      'Ожидаемый слот': spinResult.targetSlot,
+      'Фактический слот': winningIndex,
+      'Финальный угол': normalizedAngle.toFixed(2) + '°',
+      'Общий поворот': spinResult.totalRotation.toFixed(2) + '°',
+      'Угол под указателем': absoluteAngleUnderPointer.toFixed(2) + '°',
+      'Скорректированный угол': adjustedAngle.toFixed(2) + '°',
+      'Совпадение': spinResult.targetSlot === winningIndex ? '✅ ДА' : '❌ НЕТ'
     });
 
     if (onComplete) {
@@ -122,15 +130,22 @@ export const startSpinAdvanced = ({
 
 export function calculateWinningSlot(angle, generator) {
   const slotAngle = generator.slotAngle;
-  const pointerPosition = generator.pointerPosition;
   
-  // Нормализуем угол
+  // Нормализуем угол поворота колеса в диапазон [0, 360)
   const normalizedAngle = ((angle % 360) + 360) % 360;
   
-  // Рассчитываем какой слот находится под указателем
-  // Указатель находится на pointerPosition градусах, найдем слот под ним
-  const angleUnderPointer = (normalizedAngle + pointerPosition) % 360;
-  const slotIndex = Math.floor(angleUnderPointer / slotAngle) % generator.slots;
+  // В createWheel.js слоты создаются с углом: i * angleStep - Math.PI/2
+  // Слот 0 находится внизу (270°), поэтому нужно учесть это смещение
+  // Указатель находится на 270° (внизу)
+  // После поворота колеса на normalizedAngle, абсолютный угол под указателем:
+  const absoluteAngleUnderPointer = (270 + normalizedAngle) % 360;
+  
+  // Учитываем что слот 0 находится на 270°, а не на 0°
+  // Поэтому добавляем 90° к углу под указателем для правильного расчета
+  const adjustedAngle = (absoluteAngleUnderPointer + 90) % 360;
+  
+  // Определяем индекс слота
+  const slotIndex = Math.floor(adjustedAngle / slotAngle) % generator.slots;
   
   return slotIndex;
 }
