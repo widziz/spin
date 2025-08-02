@@ -5,33 +5,10 @@
   pointer-events: none;
   user-select: none;
 }
-/* Добавьте в App.css */
-.wheel-container {
-  touch-action: none; /* Отключаем стандартные свайпы браузера */
-  user-select: none; /* Запрещаем выделение текста при свайпах */
-}
-
-.roulette {
-  transition: transform 0.1s linear;
-  transform-origin: center;
-}
-
-/* Для инерционного вращения */
-.roulette.inertia {
-  transition: transform 0.05s linear;
-}
-
-/* Для плавного остановки */
-.roulette.decelerating {
-  transition: transform 2s cubic-bezier(0.25, 0.1, 0.25, 1);
-}
-
-.spin-button:disabled {
-  opacity: 0.7;
-  cursor: not-allowed;
-}
 
 .wheel-container {
+  touch-action: none;
+  user-select: none;
   position: relative;
   width: 100%;
   height: 100vh;
@@ -44,28 +21,67 @@
 .roulette-container {
   width: 800px;
   height: 800px;
+  position: relative;
 }
 
-.roulette {
+.roulette-container svg {
   transform-origin: center;
-  transition: transform 0.1s ease-out;
+  /* Отключаем CSS-анимацию, используем только JS для точного контроля */
+  transition: none !important;
 }
 
 .pointer {
   position: absolute;
-  top: 50px;
-  width: 50px;
-  height: 50px;
-  background-color: red;
+  top: calc(50% - 25px);
+  left: calc(50% - 12px);
+  width: 0;
+  height: 0;
+  border-left: 12px solid transparent;
+  border-right: 12px solid transparent;
+  border-bottom: 40px solid #ff6b35;
   z-index: 10;
+  filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.3));
+  transform: translateY(-400px); /* Перемещаем к краю колеса */
+}
+
+.pointer::after {
+  content: '';
+  position: absolute;
+  top: 40px;
+  left: -8px;
+  width: 16px;
+  height: 16px;
+  background: #ff6b35;
+  border-radius: 50%;
+  border: 2px solid #fff;
 }
 
 .bottom-panel {
-  margin-top: 20px;
+  margin-top: 30px;
 }
 
 .spin-button {
-  padding: 10px 20px;
-  font-size: 18px;
+  padding: 15px 30px;
+  font-size: 20px;
+  font-weight: bold;
   cursor: pointer;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  transition: all 0.3s ease;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.spin-button:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+}
+
+.spin-button:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
 }
