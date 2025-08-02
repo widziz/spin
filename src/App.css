@@ -1,0 +1,71 @@
+.slot-image {
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.4));
+  transform-box: fill-box;
+  transform-origin: center;
+  pointer-events: none;
+  user-select: none;
+}
+/* Добавьте в App.css */
+.wheel-container {
+  touch-action: none; /* Отключаем стандартные свайпы браузера */
+  user-select: none; /* Запрещаем выделение текста при свайпах */
+}
+
+.roulette {
+  transition: transform 0.1s linear;
+  transform-origin: center;
+}
+
+/* Для инерционного вращения */
+.roulette.inertia {
+  transition: transform 0.05s linear;
+}
+
+/* Для плавного остановки */
+.roulette.decelerating {
+  transition: transform 2s cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+
+.spin-button:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.wheel-container {
+  position: relative;
+  width: 100%;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.roulette-container {
+  width: 800px;
+  height: 800px;
+}
+
+.roulette {
+  transform-origin: center;
+  transition: transform 0.1s ease-out;
+}
+
+.pointer {
+  position: absolute;
+  top: 50px;
+  width: 50px;
+  height: 50px;
+  background-color: red;
+  z-index: 10;
+}
+
+.bottom-panel {
+  margin-top: 20px;
+}
+
+.spin-button {
+  padding: 10px 20px;
+  font-size: 18px;
+  cursor: pointer;
+}

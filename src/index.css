@@ -1,0 +1,143 @@
+body {
+  margin: 0;
+  padding: 0;
+  background-color: #232323;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: center;
+  min-height: 100vh;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  overflow: hidden;
+}
+
+
+.roulette-container {
+  position: absolute;
+  width: 870px;
+  height: 870px;
+  top: -700px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.roulette {
+  overflow: visible;
+}
+
+
+.slot {
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.slot:hover {
+  filter: brightness(1.2);
+  transform-origin: center;
+}
+
+.slot-path {
+  stroke: none;
+  filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.3));
+}
+
+.slot-emoji {
+  font-size: 32px;
+  text-anchor: middle;
+  dominant-baseline: middle;
+  pointer-events: none;
+  user-select: none;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.4));
+  transform-box: fill-box;
+  transform-origin: center;
+  user-select: none;
+  pointer-events: none;
+}
+
+.slot-text {
+  fill: #ffffff;
+  font-size: 18px;
+  font-weight: 700;
+  text-anchor: middle;
+  pointer-events: none;
+  user-select: none;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.4));
+  transform-box: fill-box;
+  transform-origin: center;
+  user-select: none;
+  pointer-events: none;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.roulette {
+  transition: transform 0.1s linear;
+  transform-origin: center;
+}
+
+.slot-emoji, .slot-text {
+  transform-box: fill-box;
+  transform-origin: center;
+  text-anchor: middle;
+  dominant-baseline: central;
+}
+
+.roulette.spinning {
+  animation: spin 4s cubic-bezier(0.17, 0.67, 0.83, 0.67) infinite;
+}
+
+.bottom-panel {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 40px;
+  background: linear-gradient(to top, #232323, transparent);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.spin-button {
+  padding: 18px 56px;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  border: none;
+  border-radius: 35px;
+  color: white;
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: 1.2px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 6px 25px rgba(102, 126, 234, 0.4);
+}
+
+.spin-button:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 35px rgba(102, 126, 234, 0.5);
+}
+
+.spin-button:active {
+  transform: translateY(0);
+}
+
+.pointer {
+  position: absolute;
+  top: 115px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 35px;  /* Соответствует ширине нового SVG (28.6026 + padding) */
+  height: 35px; /* Соответствует высоте нового SVG */
+  background: #c0c0c0;
+  -webkit-mask: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 29 26"><path d="M11.94 24.602C13.0896 26.577 15.9372 26.5928 17.1086 24.6306L28.6026 5.37807C30.187 2.72433 27.1417 -0.418716 24.3876 0.98391C20.251 3.09064 16.0691 5 14.5 5C12.9664 5 9.03267 3.17596 5.09671 1.1264C2.3521 -0.302785 -0.74136 2.81612 0.815348 5.49047L11.94 24.602Z" fill="black"/></svg>') center/contain no-repeat;
+  mask: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 29 26"><path d="M11.94 24.602C13.0896 26.577 15.9372 26.5928 17.1086 24.6306L28.6026 5.37807C30.187 2.72433 27.1417 -0.418716 24.3876 0.98391C20.251 3.09064 16.0691 5 14.5 5C12.9664 5 9.03267 3.17596 5.09671 1.1264C2.3521 -0.302785 -0.74136 2.81612 0.815348 5.49047L11.94 24.602Z" fill="black"/></svg>') center/contain no-repeat;
+  filter: drop-shadow(0 4px 15px rgba(102, 126, 234, 0.6));
+  z-index: 10;
+}
