@@ -58,7 +58,7 @@ export const Wheel = () => {
         // Callback после генерации результата (до начала анимации)
         console.log('🎲 Сгенерирован результат:', {
           слот: result.targetSlot,
-          приз: `${result.prize?.emoji} ${result.prize?.value}`,
+          приз: `${result.prize?.image || ''} ${result.prize?.value || 'неизвестно'}`,
           обороты: result.rotations.toFixed(1),
           id: result.id
         });

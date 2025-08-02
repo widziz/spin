@@ -100,12 +100,16 @@ export const startSpinAdvanced = ({
     const normalizedAngle = ((currentAngle % 360) + 360) % 360;
     const winningIndex = calculateWinningSlot(normalizedAngle, resultGenerator);
 
+    const absoluteAngleUnderPointer = (270 + normalizedAngle) % 360;
+    const adjustedAngle = (absoluteAngleUnderPointer + 90) % 360;
+    
     console.log('🎯 Результат вращения:', {
       'Ожидаемый слот': spinResult.targetSlot,
       'Фактический слот': winningIndex,
       'Финальный угол': normalizedAngle.toFixed(2) + '°',
       'Общий поворот': spinResult.totalRotation.toFixed(2) + '°',
-      'Угол под указателем': ((resultGenerator.pointerPosition + normalizedAngle) % 360).toFixed(2) + '°',
+      'Угол под указателем': absoluteAngleUnderPointer.toFixed(2) + '°',
+      'Скорректированный угол': adjustedAngle.toFixed(2) + '°',
       'Совпадение': spinResult.targetSlot === winningIndex ? '✅ ДА' : '❌ НЕТ'
     });
 
@@ -126,19 +130,22 @@ export const startSpinAdvanced = ({
 
 export function calculateWinningSlot(angle, generator) {
   const slotAngle = generator.slotAngle;
-  const pointerPosition = generator.pointerPosition;
   
   // Нормализуем угол поворота колеса в диапазон [0, 360)
   const normalizedAngle = ((angle % 360) + 360) % 360;
   
-  // Вычисляем абсолютный угол под указателем
-  // Указатель находится на фиксированной позиции (270°), 
-  // а колесо поворачивается на normalizedAngle
-  const absoluteAngleUnderPointer = (pointerPosition + normalizedAngle) % 360;
+  // В createWheel.js слоты создаются с углом: i * angleStep - Math.PI/2
+  // Слот 0 находится внизу (270°), поэтому нужно учесть это смещение
+  // Указатель находится на 270° (внизу)
+  // После поворота колеса на normalizedAngle, абсолютный угол под указателем:
+  const absoluteAngleUnderPointer = (270 + normalizedAngle) % 360;
   
-  // Определяем индекс слота под указателем
-  // Слоты нумеруются от 0 по часовой стрелке, начиная с верха (0°)
-  const slotIndex = Math.floor(absoluteAngleUnderPointer / slotAngle) % generator.slots;
+  // Учитываем что слот 0 находится на 270°, а не на 0°
+  // Поэтому добавляем 90° к углу под указателем для правильного расчета
+  const adjustedAngle = (absoluteAngleUnderPointer + 90) % 360;
+  
+  // Определяем индекс слота
+  const slotIndex = Math.floor(adjustedAngle / slotAngle) % generator.slots;
   
   return slotIndex;
 }
