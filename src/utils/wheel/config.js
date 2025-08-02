@@ -28,7 +28,6 @@ export const wheelConfig = {
     { image: 'flowers.svg', value: '50' },
     { image: 'gift.svg', value: '25' },
     { image: 'snake.svg', value: '400' },
-    { image: 'rose.svg', value: '25' },
-    { image: 'rocket.svg', value: '50' }
+    { image: 'rose.svg', value: '25' }
   ]
 };

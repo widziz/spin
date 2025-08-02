@@ -71,6 +71,7 @@ export const Wheel = () => {
       },
       onComplete: (finalRotation, winningIndex, prize) => {
         console.log('🏆 Выигрышный приз:', `${prize?.value || 'Неизвестно'}`);
+        console.log(`🎯 Реальный результат ->>> slot ${winningIndex}: ${prize?.image} ${prize?.value}`);
         
         setIsSpinning(false);
         setRotation(finalRotation);
@@ -84,6 +85,13 @@ export const Wheel = () => {
 
     // Сохраняем ссылку на текущий спин
     cancelSpinRef.current = spinInstance;
+  };
+
+  const debugPrizes = () => {
+    console.log('🔍 Призы по слотам:');
+    wheelConfig.prizes.forEach((prize, index) => {
+      console.log(`Слот ${index}: ${prize.image} ${prize.value}`);
+    });
   };
 
   return (
@@ -119,6 +127,13 @@ export const Wheel = () => {
           disabled={isSpinning}
         >
           {isSpinning ? 'КРУТИТСЯ...' : 'КРУТИТЬ'}
+        </button>
+        <button
+          className="debug-button"
+          onClick={debugPrizes}
+          style={{ marginLeft: '10px', padding: '10px', fontSize: '12px' }}
+        >
+          ОТЛАДКА ПРИЗОВ
         </button>
       </div>
     </div>
