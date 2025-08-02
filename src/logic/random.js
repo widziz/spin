@@ -7,9 +7,7 @@ export class SpinResultGenerator {
   constructor(config) {
     this.slots = config.slots || 12;
     this.prizes = config.prizes || [];
-    // Указатель находится внизу колеса (270 градусов)
-    this.pointerPosition = config.pointerPosition || 270;
-    // Начальный слот (где указатель указывает при угле 0)
+    this.pointerPosition = config.pointerPosition || 270; // Указатель внизу
     this.initialSlot = config.initialSlot || 0;
     this.slotAngle = 360 / this.slots;
     
@@ -25,22 +23,16 @@ export class SpinResultGenerator {
     const targetSlot = options.guaranteed !== undefined ? options.guaranteed : Random.int(0, this.slots - 1);
     const rotations = Random.between(5, 8);
     
-    // Простой и понятный расчет:
-    // Если мы хотим чтобы указатель (внизу, 270°) указывал на targetSlot,
-    // то нужно повернуть колесо так, чтобы targetSlot оказался внизу
+    // Из createSector.js: centerAngle = slotIndex * angleStep - Math.PI/2
+    // angleStep = 2π / totalSlots = this.slotAngle * (π/180)
+    // centerAngle для targetSlot в радианах: targetSlot * (2π/slots) - π/2
+    // Переводим в градусы: (targetSlot * (360/slots) - 90) 
+    const slotCenterAngleDegrees = (targetSlot * this.slotAngle - 90 + 360) % 360;
     
-    // Каждый слот занимает slotAngle градусов
-    // Слот 0 находится в позиции 0°, слот 1 в позиции slotAngle°, и т.д.
-    // Но в createWheel.js слоты начинаются с -90° (270°)
-    
-    // Угол центра целевого слота относительно стандартной системы координат
-    const slotAngleFromTop = targetSlot * this.slotAngle;
-    
-    // Переводим в систему координат колеса (где слот 0 начинается с 270°)
-    const slotAngleInWheel = (270 + slotAngleFromTop) % 360;
-    
-    // Чтобы этот слот оказался под указателем (270°), нужно повернуть на:
-    const targetAngle = (270 - slotAngleInWheel + 360) % 360;
+    // Указатель находится на 270°. Чтобы targetSlot оказался под указателем,
+    // нужно повернуть колесо так, чтобы центр слота совпал с указателем
+    // targetAngle = pointerPosition - slotCenterAngle
+    let targetAngle = (this.pointerPosition - slotCenterAngleDegrees + 360) % 360;
     
     const totalRotation = rotations * 360 + targetAngle;
 
@@ -58,8 +50,8 @@ export class SpinResultGenerator {
       rotations,
       totalRotation,
       targetAngle,
-      slotAngleFromTop,
-      slotAngleInWheel,
+      slotCenterAngleDegrees,
+      pointerPosition: this.pointerPosition,
       prize,
       slotAngle: this.slotAngle,
       id: `spin_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`

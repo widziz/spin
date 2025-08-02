@@ -28,8 +28,8 @@ export const startSpinAdvanced = ({
     targetSlot: spinResult.targetSlot,
     totalRotation: spinResult.totalRotation,
     targetAngle: spinResult.targetAngle,
-    slotAngleFromTop: spinResult.slotAngleFromTop,
-    slotAngleInWheel: spinResult.slotAngleInWheel,
+    slotCenterAngleDegrees: spinResult.slotCenterAngleDegrees,
+    pointerPosition: spinResult.pointerPosition,
     currentRotation
   });
   
@@ -145,28 +145,27 @@ export const startSpinAdvanced = ({
 export function calculateWinningSlot(angle, generator) {
   const slotAngle = generator.slotAngle;
   
-  // Нормализуем угол
+  // Нормализуем угол колеса
   const normalizedAngle = ((angle % 360) + 360) % 360;
   
-  // Указатель находится на 270° (внизу)
-  // Нужно определить какой слот находится под указателем
+  // Из createSector.js: centerAngle = slotIndex * angleStep - π/2
+  // В градусах: slotCenterAngle = slotIndex * slotAngle - 90
+  // Решаем обратную задачу: slotIndex = (slotCenterAngle + 90) / slotAngle
   
-  // В нашей новой системе: слот 0 начинается с 270°, слот 1 с (270° + slotAngle), и т.д.
-  // Угол под указателем
+  // Указатель находится на 270°, найдем какой угол слота находится под ним
   const angleUnderPointer = (normalizedAngle + 270) % 360;
   
-  // Находим слот, вычитая начальный сдвиг (270°)
-  const adjustedAngle = (angleUnderPointer - 270 + 360) % 360;
-  const slotIndex = Math.floor(adjustedAngle / slotAngle) % generator.slots;
+  // Переводим в индекс слота
+  const slotIndex = Math.floor((angleUnderPointer + 90) / slotAngle) % generator.slots;
   
   console.log('🧮 Расчет слота:', {
     originalAngle: angle,
     normalizedAngle: normalizedAngle.toFixed(2),
     angleUnderPointer: angleUnderPointer.toFixed(2),
-    adjustedAngle: adjustedAngle.toFixed(2),
     slotAngle: slotAngle.toFixed(2),
     calculatedSlot: slotIndex,
-    totalSlots: generator.slots
+    totalSlots: generator.slots,
+    formula: `floor((${angleUnderPointer.toFixed(2)} + 90) / ${slotAngle.toFixed(2)}) % ${generator.slots}`
   });
   
   return slotIndex;
