@@ -59,7 +59,7 @@ export const createWheel = (svgRef) => {
     slotGroup.classList.add('slot');
     slotGroup.setAttribute('data-slot', i.toString());
 
-    const prize = prizes[i % prizes.length];
+    const prize = prizes[i];
     let strokeColor = '#aaa';
     if (prize.value >= 'Буст') strokeColor = '#ff9033';
     else if (prize.value >= 150) strokeColor = '#f0d333ff';
