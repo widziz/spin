@@ -56,7 +56,7 @@ export const Wheel = () => {
       generateOptions: {
         antiRepeat: true,      // Защита от повторений
         maxRepeats: 3,        // Не более 3 одинаковых призов подряд
-        guaranteed: 0,        // Для тестирования - всегда выпадает слот 0
+        // guaranteed: 0,        // Для тестирования - всегда выпадает слот 0
       },
       onGenerate: (result) => {
         // Callback после генерации результата (до начала анимации)

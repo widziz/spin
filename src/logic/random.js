@@ -25,19 +25,22 @@ export class SpinResultGenerator {
     const targetSlot = options.guaranteed !== undefined ? options.guaranteed : Random.int(0, this.slots - 1);
     const rotations = Random.between(5, 8);
     
-    // Рассчитываем целевой угол
-    // В createWheel.js слот 0 начинается с угла -90° (270°)
-    // Центр каждого слота: слот_i находится на угле (-90° + i * slotAngle)
-    const slotCenterAngle = -90 + (targetSlot * this.slotAngle);
+    // Простой и понятный расчет:
+    // Если мы хотим чтобы указатель (внизу, 270°) указывал на targetSlot,
+    // то нужно повернуть колесо так, чтобы targetSlot оказался внизу
     
-    // Нормализуем угол слота к диапазону 0-360
-    const normalizedSlotAngle = ((slotCenterAngle % 360) + 360) % 360;
+    // Каждый слот занимает slotAngle градусов
+    // Слот 0 находится в позиции 0°, слот 1 в позиции slotAngle°, и т.д.
+    // Но в createWheel.js слоты начинаются с -90° (270°)
     
-    // Чтобы указатель (270°) указывал на центр слота, нужно повернуть колесо так,
-    // чтобы слот оказался на позиции указателя
-    // targetAngle = slotAngle - pointerPosition (но нужно учесть направление вращения)
-    let targetAngle = (normalizedSlotAngle - this.pointerPosition) % 360;
-    if (targetAngle < 0) targetAngle += 360;
+    // Угол центра целевого слота относительно стандартной системы координат
+    const slotAngleFromTop = targetSlot * this.slotAngle;
+    
+    // Переводим в систему координат колеса (где слот 0 начинается с 270°)
+    const slotAngleInWheel = (270 + slotAngleFromTop) % 360;
+    
+    // Чтобы этот слот оказался под указателем (270°), нужно повернуть на:
+    const targetAngle = (270 - slotAngleInWheel + 360) % 360;
     
     const totalRotation = rotations * 360 + targetAngle;
 
@@ -55,7 +58,8 @@ export class SpinResultGenerator {
       rotations,
       totalRotation,
       targetAngle,
-      slotCenterAngle: normalizedSlotAngle,
+      slotAngleFromTop,
+      slotAngleInWheel,
       prize,
       slotAngle: this.slotAngle,
       id: `spin_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`
