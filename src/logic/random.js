@@ -16,18 +16,15 @@ export class SpinResultGenerator {
     const targetSlot = options.guaranteed !== undefined ? options.guaranteed : Random.int(0, this.slots - 1);
     const rotations = Random.between(5, 8);
     
-    // Слоты нумеруются от 0 по часовой стрелке, начиная с верха (0°)
-    // Центр слота находится на угле: targetSlot * slotAngle
-    const slotCenterAngle = targetSlot * this.slotAngle;
+    // В createWheel.js слоты создаются с углом: i * angleStep - Math.PI/2
+    // Это означает что слот 0 находится внизу (270°), слот slots/4 справа (0°) и т.д.
+    // Центр слота i находится на угле: (targetSlot * slotAngle - 90) градусов
+    const slotCenterAngle = (targetSlot * this.slotAngle - 90 + 360) % 360;
     
-    // Для того чтобы указатель (270°) указывал точно на центр целевого слота,
-    // нужно повернуть колесо так, чтобы центр слота оказался под указателем
-    // Финальный угол = slotCenterAngle - pointerPosition + 360n
-    let targetAngle = slotCenterAngle - this.pointerPosition;
-    
-    // Нормализуем угол в диапазон [0, 360)
-    while (targetAngle < 0) targetAngle += 360;
-    while (targetAngle >= 360) targetAngle -= 360;
+    // Указатель находится на 270° (внизу)
+    // Чтобы указатель указывал на слот, нужно повернуть колесо так, 
+    // чтобы slotCenterAngle оказался на позиции указателя (270°)
+    let targetAngle = (270 - slotCenterAngle + 360) % 360;
     
     const totalRotation = rotations * 360 + targetAngle;
 
