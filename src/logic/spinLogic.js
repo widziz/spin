@@ -1,8 +1,10 @@
+// VERSION: 2024-01-18-FIXED
 import { createSpinGenerator } from './random';
 
 let spinGenerator = null;
 
 export const initSpinGenerator = (config) => {
+  console.log('🔧 Инициализация генератора (версия 2024-01-18-FIXED):', config);
   spinGenerator = createSpinGenerator(config);
   return spinGenerator;
 };
