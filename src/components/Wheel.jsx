@@ -19,10 +19,12 @@ export const Wheel = () => {
     // Создаем колесо
     createWheel(svgRef);
     
-    // Инициализируем генератор результатов
+    // Инициализируем генератор результатов с правильной конфигурацией
     spinGeneratorRef.current = createSpinGenerator({
       slots: wheelConfig.slots,
       prizes: wheelConfig.prizes,
+      pointerPosition: 270, // Указатель внизу колеса
+      initialSlot: 0, // Начальная позиция
       weights: wheelConfig.prizeWeights || null, // Опциональные веса призов
       fairMode: wheelConfig.fairMode !== false // По умолчанию честный режим
     });
@@ -30,7 +32,9 @@ export const Wheel = () => {
     // Также инициализируем глобальный генератор
     initSpinGenerator({
       slots: wheelConfig.slots,
-      prizes: wheelConfig.prizes
+      prizes: wheelConfig.prizes,
+      pointerPosition: 270,
+      initialSlot: 0
     });
   }, []);
 
